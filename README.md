@@ -1,4 +1,4 @@
-### Architecture Description
+### **1. Architecture Overview**
 
 1. **MCP Client (AI Agent)**
 
@@ -24,27 +24,41 @@
 
 ---
 
-### ASCII Diagram
+### **2. MCP Server Flow**
 
 ```
-+-------------+          +---------------+
-| MCP Client  | <------> | MCP Server    |
-| (AI Agent)  |          | (Your Rust App) |
-+-------------+          +---------------+
-                                |
-                                | RPC Call
-                                v
-                        +-------------------+
-                        | Ethereum Node (RPC) |
-                        | Infura / Alchemy    |
-                        +-------------------+
-                                |
-                                v
-                         +--------------+
-                         | Uniswap V2/V3 |
-                         | Smart Contract |
-                         +--------------+
+           ┌──────────────────────┐
+           │      AI Agent        │
+           │  (decision making)   │
+           └─────────┬────────────┘
+                     │  MCP Request
+                     ▼
+           ┌──────────────────────┐
+           │      MCP Server       │
+           │  (ServerHandler)     │
+           │──────────────────────│
+           │ - call_tool()         │
+           │ - list_tools()        │
+           └───────┬──────────────┘
+                   │
+       ┌───────────┼─────────────┐
+       ▼           ▼             ▼
+┌────────────┐ ┌────────────┐ ┌────────────┐
+│ BalanceModule│ │ PriceModule │ │ SwapModule │
+│  get_balance │ │  get_price │ │simulate_swap│
+└────────────┘ └────────────┘ └────────────┘
+                   │
+                   ▼
+          ┌─────────────────┐
+          │ Ethereum Node   │
+          │  (ethers.rs)    │
+          └─────────────────┘
 ```
 
----
+**Explanation:**
+
+* **AI Agent**: Sends requests to the MCP Server to retrieve data or execute operations.
+* **MCP Server**: Handles requests according to the `ServerHandler` trait and manages context.
+* **Tool Modules**: `BalanceModule`, `PriceModule`, and `SwapModule` provide specific functionalities.
+* **Ethereum Node**: The underlying blockchain data source; the tool modules interact with it via the provider (`ethers.rs`).
 
