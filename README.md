@@ -1,3 +1,5 @@
+---
+
 ### **1. Architecture Overview**
 
 1. **MCP Client (AI Agent)**
@@ -21,6 +23,28 @@
 
 **Overall Flow:**
 **MCP Client ↔ MCP Server → Ethereum Node → Uniswap Contract**
+
+#### ASCII Diagram:
+
+```
++-------------+          +---------------+
+| MCP Client  | <------> | MCP Server    |
+| (AI Agent)  |          | (Rust App)    |
++-------------+          +---------------+
+                                |
+                                | RPC Call
+                                v
+                        +-------------------+
+                        | Ethereum Node (RPC) |
+                        | Infura / Alchemy    |
+                        +-------------------+
+                                |
+                                v
+                         +--------------+
+                         | Uniswap V2/V3 |
+                         | Smart Contract |
+                         +--------------+
+```
 
 ---
 
@@ -61,4 +85,6 @@
 * **MCP Server**: Handles requests according to the `ServerHandler` trait and manages context.
 * **Tool Modules**: `BalanceModule`, `PriceModule`, and `SwapModule` provide specific functionalities.
 * **Ethereum Node**: The underlying blockchain data source; the tool modules interact with it via the provider (`ethers.rs`).
+
+---
 
