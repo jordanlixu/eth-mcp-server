@@ -1,0 +1,23 @@
+# Maven / Gradle
+target/
+build/
+
+# Logs
+*.log
+logs/
+*.out
+
+# IDE / Editor
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# OS / System files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
