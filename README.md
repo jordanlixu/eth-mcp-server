@@ -1,3 +1,4 @@
+
 ---
 
 ### **1. Architecture Overview**
@@ -87,4 +88,5 @@
 * **Ethereum Node**: The underlying blockchain data source; the tool modules interact with it via the provider (`ethers.rs`).
 
 ---
+
 
