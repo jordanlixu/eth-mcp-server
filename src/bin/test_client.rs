@@ -8,6 +8,7 @@ use rmcp::{
     service::ServiceExt,
     transport::{ConfigureCommandExt, TokioChildProcess},
 };
+use serde_json::json;
 use tokio::process::Command;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -57,6 +58,32 @@ async fn main() -> Result<(), RmcpError> {
         .await?;
 
     tracing::info!("get_balance result: {:#?}", balance_result);
+
+
+    // 查询 ETH/USD
+    let eth_price_result = client
+        .call_tool(CallToolRequestParam {
+            name: "get_price".into(),
+            arguments: json!({
+            "token": null  // None 表示默认 ETH/USD
+        }).as_object().cloned(),
+        })
+        .await?;
+
+    tracing::info!("get_price ETH/USD result: {:#?}", eth_price_result);
+
+   // 查询 BTC/USD
+    let btc_price_result = client
+        .call_tool(CallToolRequestParam {
+            name: "get_price".into(),
+            arguments: json!({
+            "token": "BTC"
+        }).as_object().cloned(),
+        })
+        .await?;
+
+    tracing::info!("get_price BTC/USD result: {:#?}", btc_price_result);
+
 
     // ===== Shutdown client =====
     client.cancel().await?;
