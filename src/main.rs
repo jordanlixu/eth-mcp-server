@@ -1,28 +1,50 @@
-use ethers::prelude::*;
 use std::env;
+use std::sync::Arc;
+use tokio::io::{stdin, stdout};
+use ethers::providers::{Provider, Http, ProviderExt};
 use dotenv::dotenv;
-use rust_decimal::Decimal;
+use rmcp::ServiceExt;
+use tracing_subscriber;
+use tracing_subscriber::EnvFilter;
+
+mod balance;
+mod price;
+mod swap;
+mod service;
+
+use crate::service::TokenService;
+use balance::BalanceModule;
+use price::PriceModule;
+use swap::SwapModule;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    // 初始化环境变量
     dotenv().ok();
+
+    // 初始化日志
     tracing_subscriber::fmt::init();
 
-    let rpc_url = env::var("INFURA_URL")?;
 
-    let provider = Provider::<Http>::connect(rpc_url.as_str()).await
-        .interval(std::time::Duration::from_millis(200u64));
+    // 获取 RPC URL
+    let rpc_url = env::var("INFURA_URL").expect("ETH_NODE_URL not set");
 
-    let address: Address = env::var("WALLET_ADDRESS")?.parse()?;
+    // 创建 Provider (ethers 2.x 推荐用 connect)
+    let provider = Provider::<Http>::connect(rpc_url.as_str()).await;
 
+    // 初始化各模块（模块内部会把 provider 包成 Arc）
+    let balance_module = Arc::new(BalanceModule::new(provider.clone()));
+    let price_module = Arc::new(PriceModule::new(provider.clone()));
+    let swap_module = Arc::new(SwapModule::new(provider));
 
-    let balance_wei = provider.get_balance(address, None).await?;
+    let service = TokenService::new(balance_module, price_module, swap_module);
 
-    let balance_str = ethers::utils::format_units(balance_wei, "ether")?;
+    // 构建 transport (stdin/stdout)
+    let transport = (stdin(), stdout());
 
-    let balance_decimal: Decimal = balance_str.parse()?;
-
-    println!("ETH Balance: {} ETH", balance_decimal);
+    // 启动 MCP server
+    let server = service.serve(transport).await?;
+    server.waiting().await?;
 
     Ok(())
 }
