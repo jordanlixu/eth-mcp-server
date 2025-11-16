@@ -9,8 +9,10 @@ use rmcp::{
 };
 use ethers::types::Address;
 use rust_decimal::Decimal;
+use rust_decimal::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use std::str::FromStr;
 
 use crate::balance::BalanceModule;
 use crate::price::PriceModule;
@@ -40,7 +42,6 @@ pub struct PriceResult {
 
 #[derive(Serialize, Deserialize, schemars::JsonSchema)]
 pub struct SwapArgs {
-    pub router: String,
     pub from_token: String,
     pub to_token: String,
     pub amount_in: String,
@@ -50,7 +51,6 @@ pub struct SwapArgs {
 #[derive(Serialize, Deserialize, schemars::JsonSchema)]
 pub struct SwapResult {
     pub estimated_output: String,
-    pub min_output: String,
     pub gas: String,
 }
 
@@ -85,23 +85,24 @@ impl TokenService {
     }
 
     #[tool]
-    async fn simulate_swap(
+    async fn swap_tokens(
         &self,
         Parameters(args): Parameters<SwapArgs>,
-    ) -> Json<SwapResult> {
-        let router: Address = args.router.parse().unwrap();
-        let from_token: Address = args.from_token.parse().unwrap();
-        let to_token: Address = args.to_token.parse().unwrap();
-        let amount_in: Decimal = args.amount_in.parse().unwrap();
-        let (estimated_output, min_output, gas) = self
+    ) -> Json<SwapResult>  {
+
+        let amount_dec = Decimal::from_str(&args.amount_in).unwrap();
+
+        // let amount_in = Decimal::from_f64(0.001).unwrap();
+
+        // 调用 swap_tokens
+        let (estimated_output, gas) = self
             .swap
-            .swap_tokens(router, from_token, to_token, amount_in, args.slippage)
+            .swap_tokens(&args.from_token, &args.to_token,amount_dec, args.slippage)
             .await
-            .unwrap();
+            .unwrap_or((Decimal::ZERO, Decimal::ZERO));
 
         Json(SwapResult {
             estimated_output: estimated_output.to_string(),
-            min_output: min_output.to_string(),
             gas: gas.to_string(),
         })
     }

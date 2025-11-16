@@ -34,8 +34,8 @@ async fn main() -> anyhow::Result<()> {
 
     // 初始化各模块（模块内部会把 provider 包成 Arc）
     let balance_module = Arc::new(BalanceModule::new(provider.clone()));
-    let price_module = Arc::new(PriceModule::new(provider.clone(), config));
-    let swap_module = Arc::new(SwapModule::new(provider));
+    let price_module = Arc::new(PriceModule::new(provider.clone(), config.clone()));
+    let swap_module = Arc::new(SwapModule::new(provider,config.clone()));
 
     let service = TokenService::new(balance_module, price_module, swap_module);
 

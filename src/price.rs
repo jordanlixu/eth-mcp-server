@@ -5,7 +5,7 @@ use ethers::prelude::*;
 use rust_decimal::Decimal;
 use std::sync::Arc;
 
-use crate::config::AppConfig;  // 你自己的 config 模块
+use crate::config::AppConfig;
 
 const AGGREGATOR_ABI_JSON: &[u8] = include_bytes!("../abis/aggregatorv3_abi.json");
 
