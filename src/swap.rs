@@ -55,7 +55,7 @@ impl SwapModule {
         );
 
         let router = UniswapV2Router::new(router_addr, self.provider.clone());
-        let weth_addr: Address = env::var("WETH_ADDRESS")?.parse()?;// Sepolia WETH
+        let weth_addr: Address = env::var("WETH")?.parse()?;// Sepolia WETH
 
         // 获取 to_token 的小数位
         let decimals: u32 = if to_token == Address::zero() {

@@ -1,66 +1,89 @@
 // src/price.rs
+use anyhow::{anyhow, Result};
+use ethers::abi::Abi;
 use ethers::prelude::*;
 use rust_decimal::Decimal;
-use anyhow::Result;
-use std::collections::HashMap;
 use std::sync::Arc;
-use ethers::abi::Abi;
+
+use crate::config::AppConfig;  // 你自己的 config 模块
+
+const AGGREGATOR_ABI_JSON: &[u8] = include_bytes!("../abis/aggregatorv3_abi.json");
 
 pub struct PriceModule {
     pub provider: Arc<Provider<Http>>,
-    /// token address 或 symbol → Chainlink feed address
-    pub feed_map: HashMap<String, Address>,
+    pub config: AppConfig,
 }
 
 impl PriceModule {
-    pub fn new(provider: Provider<Http>) -> Self {
-        let mut feed_map = HashMap::new();
-
-        // Sepolia 测试网示例
-        feed_map.insert("ETH".to_string(), "0x694AA1769357215DE4FAC081bf1f309aDC325306".parse().unwrap()); // ETH/USD
-        feed_map.insert("BTC".to_string(), "0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43".parse().unwrap()); // BTC/USD
-        feed_map.insert(
-            "DAI".to_string(),
-            "0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9".parse().unwrap(),
-        ); // DAI/USD
-        feed_map.insert(
-            "USDC".to_string(),
-            "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238".parse().unwrap(),
-        ); // USDC/USD
-        feed_map.insert(
-            "UNI".to_string(),
-            "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984".parse().unwrap(),
-        ); // UNI/ETH 示例，实际要查 Chainlink 文档
-
+    pub fn new(provider: Provider<Http>, config: AppConfig) -> Self {
         Self {
             provider: Arc::new(provider),
-            feed_map,
+            config,
         }
     }
 
+    // ----------------------------------------
+    // Public API
+    // ----------------------------------------
+
     /// 获取价格
-    /// - token: None -> ETH/USD
-    /// - token: Some(symbol or address) -> 对应 feed 原生单位
+    /// token:
+    ///   - None → 默认 ETH/USD
+    ///   - Some("WETH") → 配置里查地址
+    ///   - Some("0x...") → 直接当 Chainlink feed address
     pub async fn get_price(&self, token: Option<&str>) -> Result<Decimal> {
         // 默认 ETH
         let key = token.unwrap_or("ETH");
 
-        let feed_address = self
-            .feed_map
-            .get(key)
-            .ok_or_else(|| anyhow::anyhow!("No feed available for token {}", key))?;
+        let feed_address = self.resolve_feed_address(key)?;
 
+        self.fetch_price(feed_address).await
+    }
+
+    pub async fn eth_price(&self) -> Result<Decimal> {
+        self.get_price(None).await
+    }
+
+    pub async fn price(&self, symbol: &str) -> Result<Decimal> {
+        self.get_price(Some(symbol)).await
+    }
+
+    // ----------------------------------------
+    // Internal
+    // ----------------------------------------
+
+    /// 把 symbol 或 0x 地址映射成 chainlink feed address
+    fn resolve_feed_address(&self, input: &str) -> Result<Address> {
+        // 1. 如果用户传入 0x... 就直接解析
+        if input.starts_with("0x") {
+            return Ok(input.parse()?);
+        }
+
+        // 2. 去你的 config 里查
+        if let Some(addr) = self.config.token_address(input) {
+            return Ok(addr);
+        }
+
+        Err(anyhow!("Unknown token or feed address: {}", input))
+    }
+
+    /// 调用链上 price feed 获取价格
+    /// 根据 feed 地址获取价格
+     async fn fetch_price(&self, feed_addr: Address) -> Result<Decimal> {
+        // 从 JSON 加载 ABI
         let abi: Abi = serde_json::from_slice(include_bytes!("../abis/aggregatorv3_abi.json"))?;
-        let contract = Contract::new(*feed_address, abi, self.provider.clone());
+        let contract = Contract::new(feed_addr, abi, self.provider.clone());
 
-        // latestAnswer() -> i128
-        let answer: i128 = contract
-            .method::<(), i128>("latestAnswer", ())?
-            .call()
-            .await?;
+        // 调用 latestRoundData() 获取最新价格
+        let (_round_id, answer, _started_at, _updated_at, _answered_in_round): (u128, i128, u64, u64, u128) =
+            contract.method("latestRoundData", ())?.call().await?;
 
-        // Chainlink feed 一般 8 decimals
-        let price = Decimal::from_i128_with_scale(answer, 8);
+        // 动态获取 decimals
+        let decimals: u8 = contract.method("decimals", ())?.call().await?;
+
+        // 转成 Decimal 并按 decimals 缩放
+        let price = Decimal::from_i128_with_scale(answer, decimals.into());
+
         Ok(price)
     }
 }

@@ -35,7 +35,7 @@ async fn test_erc20_balance() -> Result<()> {
 
     let wallet: Address = env::var("WALLET_ADDRESS")?.parse()?;
 
-    let uni_contract: Address = env::var("UNI_ADDRESS")?.parse()?;
+    let uni_contract: Address = env::var("UNI")?.parse()?;
 
 
     let balance: Decimal = balance_module.get_balance(wallet, Some(uni_contract)).await?;

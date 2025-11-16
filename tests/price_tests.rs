@@ -3,6 +3,7 @@ use ethers::prelude::*;
 use rust_decimal::Decimal;
 use std::env;
 use std::sync::Arc;
+use eth_mcp_server::config::AppConfig;
 use eth_mcp_server::price::PriceModule;
 
 #[tokio::test]
@@ -11,12 +12,16 @@ async fn test_price_module() {
     dotenv::dotenv().ok();
     let _ = tracing_subscriber::fmt::try_init();
 
+    // 初始化配置
+    let config = AppConfig::load();
+
     // RPC 连接
     let rpc_url = env::var("INFURA_URL").expect("INFURA_URL not set");
-    let provider = Arc::new(Provider::<Http>::connect(rpc_url.as_str()).await);
+    let provider = Provider::<Http>::connect(rpc_url.as_str()).await;
 
     // PriceModule 实例
-    let price_module = PriceModule::new((*provider).clone());
+    let price_module = Arc::new(PriceModule::new(provider.clone(), config));
+
 
     // 查询 ETH/USD
     let eth_price: Decimal = price_module.get_price(None).await.unwrap();

@@ -26,7 +26,7 @@ async fn test_simulate_swap_eth_to_weth() -> Result<()> {
 
 
     // ETH -> WETH
-    let usdc_addr: Address = env::var("USDC_ADDRESS")?.parse()?;// Sepolia WETH
+    let usdc_addr: Address = env::var("USDC")?.parse()?;// Sepolia WETH
     let from_token = Address::zero();
 
 
