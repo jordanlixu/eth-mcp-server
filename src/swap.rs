@@ -1,16 +1,14 @@
-use ethers::prelude::*;
-use ethers::types::{U256};
-use ethers::utils::{parse_units, format_units};
-use rust_decimal::Decimal;
-use rust_decimal::prelude::FromPrimitive;
-use chrono::Utc;
 use anyhow::Result;
-use std::sync::Arc;
+use chrono::Utc;
+use ethers::prelude::*;
 use ethers::types::transaction::eip2718::TypedTransaction;
+use ethers::types::U256;
+use ethers::utils::{format_units, parse_units};
+use rust_decimal::prelude::FromPrimitive;
+use rust_decimal::Decimal;
 use std::str::FromStr;
+use std::sync::Arc;
 use tracing::info;
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
 
 use crate::config::AppConfig;
 
@@ -19,7 +17,6 @@ fn apply_slippage_wei(amount: U256, slippage_bp: u32) -> U256 {
     // slippage_bp = 基点，50 = 0.5%
     amount * U256::from(10000 - slippage_bp) / U256::from(10000)
 }
-
 
 pub struct SwapModule {
     pub provider: Arc<Provider<Http>>,
@@ -44,10 +41,6 @@ impl SwapModule {
         amount_in: Decimal,
         slippage: f64,
     ) -> Result<(Decimal, Decimal)> {
-
-
-        info!("Something happened ddddddfjjjjjjjjjdkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk");
-
         abigen!(
             UniswapV2Router,
             r#"[
@@ -71,8 +64,20 @@ impl SwapModule {
         // -------------------------------
         // 统一处理 ETH -> WETH
         // -------------------------------
-        let from_addr = if from_token == "ETH" { weth_addr } else { self.config.token_address(from_token).expect("Invalid from_token") };
-        let to_addr = if to_token == "ETH" { weth_addr } else { self.config.token_address(to_token).expect("Invalid to_token") };
+        let from_addr = if from_token == "ETH" {
+            weth_addr
+        } else {
+            self.config
+                .token_address(from_token)
+                .expect("Invalid from_token")
+        };
+        let to_addr = if to_token == "ETH" {
+            weth_addr
+        } else {
+            self.config
+                .token_address(to_token)
+                .expect("Invalid to_token")
+        };
 
         let is_eth_to_token = from_token == "ETH";
         let is_token_to_eth = to_token == "ETH";
@@ -80,12 +85,10 @@ impl SwapModule {
         // -------------------------------
         // 获取 decimals
         // -------------------------------
-        let from_decimals: u32 =
-            ERC20::new(from_addr, self.provider.clone())
-                .decimals()
-                .call()
-                .await? as u32;
-
+        let from_decimals: u32 = ERC20::new(from_addr, self.provider.clone())
+            .decimals()
+            .call()
+            .await? as u32;
 
         // -------------------------------
         // 构造 path + amount_in
@@ -96,8 +99,12 @@ impl SwapModule {
         // -------------------------------
         // 模拟 getAmountsOut
         // -------------------------------
-        info!("amount_in_wei: {:#?}",amount_in_wei);
-        let amounts_out = match router.get_amounts_out(amount_in_wei, path.clone()).call().await {
+        info!("amount_in_wei: {:#?}", amount_in_wei);
+        let amounts_out = match router
+            .get_amounts_out(amount_in_wei, path.clone())
+            .call()
+            .await
+        {
             Ok(res) => res,
             Err(e) => {
                 return Ok((Decimal::ZERO, Decimal::ZERO));
@@ -118,20 +125,35 @@ impl SwapModule {
         let deadline = U256::from((Utc::now().timestamp() + 600) as u64);
         let tx: TypedTransaction = if is_eth_to_token {
             router
-                .swap_exact_eth_for_tokens(min_u256, path.clone(), self.config.wallet_address, deadline)
+                .swap_exact_eth_for_tokens(
+                    min_u256,
+                    path.clone(),
+                    self.config.wallet_address,
+                    deadline,
+                )
                 .value(amount_in_wei)
                 .tx
         } else if is_token_to_eth {
             router
-                .swap_exact_tokens_for_eth(amount_in_wei, min_u256, path.clone(), self.config.wallet_address, deadline)
+                .swap_exact_tokens_for_eth(
+                    amount_in_wei,
+                    min_u256,
+                    path.clone(),
+                    self.config.wallet_address,
+                    deadline,
+                )
                 .tx
         } else {
             router
-                .swap_exact_tokens_for_tokens(amount_in_wei, min_u256, path.clone(), self.config.wallet_address, deadline)
+                .swap_exact_tokens_for_tokens(
+                    amount_in_wei,
+                    min_u256,
+                    path.clone(),
+                    self.config.wallet_address,
+                    deadline,
+                )
                 .tx
         };
-
-
 
         // -------------------------------
         // 模拟调用 eth_call 获取输出（可选）
@@ -144,11 +166,10 @@ impl SwapModule {
         let gas = self.provider.estimate_gas(&tx, None).await?;
         let gas_dec = Decimal::from_u128(gas.as_u128()).unwrap();
 
-        let to_decimals: u32 =
-            ERC20::new(to_addr, self.provider.clone())
-                .decimals()
-                .call()
-                .await? as u32;
+        let to_decimals: u32 = ERC20::new(to_addr, self.provider.clone())
+            .decimals()
+            .call()
+            .await? as u32;
         let est_dec = Decimal::from_str(&format_units(estimated_wei, to_decimals)?)?;
         Ok((est_dec, gas_dec))
     }

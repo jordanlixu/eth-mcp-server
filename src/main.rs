@@ -1,18 +1,15 @@
-use std::env;
-use std::sync::Arc;
-use tokio::io::{stdin, stdout};
-use ethers::providers::{Provider, Http, ProviderExt};
 use dotenv::dotenv;
-use rmcp::ServiceExt;
-use tracing_subscriber;
-
-
 use eth_mcp_server::balance::BalanceModule;
 use eth_mcp_server::config::AppConfig;
 use eth_mcp_server::price::PriceModule;
-use eth_mcp_server::swap::SwapModule;
 use eth_mcp_server::service::TokenService;
-
+use eth_mcp_server::swap::SwapModule;
+use ethers::providers::{Http, Provider, ProviderExt};
+use rmcp::ServiceExt;
+use std::env;
+use std::sync::Arc;
+use tokio::io::{stdin, stdout};
+use tracing_subscriber;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -21,7 +18,6 @@ async fn main() -> anyhow::Result<()> {
 
     // 初始化日志
     tracing_subscriber::fmt::init();
-
 
     // 获取 RPC URL
     let rpc_url = env::var("INFURA_URL").expect("ETH_NODE_URL not set");
@@ -35,7 +31,7 @@ async fn main() -> anyhow::Result<()> {
     // 初始化各模块（模块内部会把 provider 包成 Arc）
     let balance_module = Arc::new(BalanceModule::new(provider.clone()));
     let price_module = Arc::new(PriceModule::new(provider.clone(), config.clone()));
-    let swap_module = Arc::new(SwapModule::new(provider,config.clone()));
+    let swap_module = Arc::new(SwapModule::new(provider, config.clone()));
 
     let service = TokenService::new(balance_module, price_module, swap_module);
 
