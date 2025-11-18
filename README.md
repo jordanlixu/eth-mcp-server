@@ -1,12 +1,9 @@
-
----
-
 # MCP Ethereum Tooling Server (Rust)
 
-This project implements a Model Context Protocol (MCP) server in Rust that provides Ethereum-related tooling for AI agents.
-It exposes balance queries, token price lookup, and Uniswap swap simulation—through a simple MCP interface.
+This project implements a **Model Context Protocol (MCP) server** in Rust that provides Ethereum-related tooling for AI agents.
+It exposes balance queries, token price lookup, and Uniswap swap simulation through a simple MCP interface.
 
-The goal of this project is to demonstrate practical Rust engineering, modular design, and correct usage of Ethereum RPC.
+The goal is to demonstrate **practical Rust engineering, modular design, and correct usage of Ethereum RPC**.
 
 ---
 
@@ -18,7 +15,8 @@ When an AI agent calls a tool, the server performs on-chain queries via Ethereum
 ```
 MCP Client → MCP Server → Ethereum RPC → Uniswap Contracts
 ```
-#### ASCII Diagram:
+
+### Architecture Diagram
 
 ```
 +-------------+          +---------------+
@@ -29,18 +27,19 @@ MCP Client → MCP Server → Ethereum RPC → Uniswap Contracts
                                 | RPC Call
                                 v
                         +-------------------+
-                        | Ethereum Node (RPC) |
-                        | Infura / Alchemy    |
+                        | Ethereum Node (RPC)|
+                        | Infura / Alchemy  |
                         +-------------------+
                                 |
                                 v
                          +--------------+
-                         | Uniswap V2/V3 |
-                         | Smart Contract |
+                         | Uniswap V2/V3|
+                         | Smart Contract|
                          +--------------+
+```
 
-The server does **not** execute real transactions.
-Swap functionality uses `eth_call` to simulate execution safely.
+> **Note:** The server does **not** execute real transactions.
+> Swap functionality uses `eth_call` to simulate execution safely.
 
 ---
 
@@ -55,15 +54,14 @@ Queries:
 
 ### `get_token_price`
 
-Fetches token price using on-chain Uniswap pool data.
-(External price sources not included in this assignment.)
+* Fetches token price using on-chain Uniswap pool data
+* **Note:** External price sources are not included
 
 ### `swap_tokens`
 
-Constructs a Uniswap V2 or V3 swap call and simulates it using `eth_call`.
-Returns expected output amount and gas estimate.
-
-No transaction is broadcast.
+* Constructs a Uniswap V2 or V3 swap call and simulates it using `eth_call`
+* Returns expected output amount and gas estimate
+* **No transaction is broadcast**
 
 ---
 
@@ -74,63 +72,51 @@ No transaction is broadcast.
 * Rust (tokio async runtime)
 * `ethers-rs`
 * `serde` / `serde_json`
-* `tracing` for logging
+* `tracing` (logging)
 * MCP Rust SDK (`rmcp`)
 
 ### Environment
 
 Create a `.env` file:
 
-```
+```bash
 INFURA_URL=
 WALLET_ADDRESS=
 ```
 
-The private key is only used to construct transactions for simulation (not broadcast).
+> The private key is only used for constructing simulation transactions, **not broadcasted**.
 
 ---
 
 ## 4. Running
 
-Install dependencies:
+### Build
 
-```
+```bash
 cargo build
 ```
 
-Start the server:
+### Start MCP Server
 
-```
+```bash
 cargo run
 ```
 
-Run tests:
+* Starts the MCP server (`main.rs`)
+* Runs on Sepolia testnet with real wallets
+* ChatGPT or other clients can send requests directly
 
-```
-cargo test
-```
-Usage
+### Run Test Client (Local Simulation)
 
-1️⃣ Run MCP Server
-cargo run
-
-Starts the MCP server (main.rs)
-
-Runs on Sepolia testnet with real wallets
-
-ChatGPT or other clients can send requests directly
-
-2️⃣ Run Test Client (Local Simulation)
+```bash
 cargo run --bin test_client
+```
 
+* Simulates MCP host/client locally
+* Sends requests to the running MCP server to test endpoints and responses
+* Useful for development or automated tests without deploying the server
+* All transactions occur on Sepolia testnet — safe, no production infrastructure required
 
-Simulates an MCP host / client locally
-
-Sends requests to the running MCP server to test endpoints and responses
-
-Useful for development or automated tests without deploying the server
-
-All transactions occur on Sepolia testnet — safe, no production infra required
 ---
 
 ## 5. Example MCP Tool Call
@@ -162,15 +148,11 @@ All transactions occur on Sepolia testnet — safe, no production infra required
 
 ---
 
-## 6. Design Notes (Short & Honest)
+## 6. Design Notes
 
-* The server uses a single shared Ethereum provider to reduce redundant connections.
-* Uses real wallets on Sepolia testnet, with simulated/test transactions; no production infrastructure required.
+* Uses a single shared Ethereum provider to reduce redundant connections
+* Works with real wallets on Sepolia testnet; simulated/test transactions only
 * Can be deployed locally or embedded in external clients
+* Modular design: Balance / Price / Swap modules can be extended easily
 
 ---
-
-
-
-
-
