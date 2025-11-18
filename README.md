@@ -47,19 +47,19 @@ Swap functionality uses `eth_call` to simulate execution safely.
 ## 2. Provided Tools
 
 ```
-                 ┌──────────────────────┐
+           ┌──────────────────────┐
            │      AI Agent        │
            │  (Decision Making)   │
            └─────────┬────────────┘
                      │  MCP Request
                      ▼
-           ┌──────────────────────┐
+           ┌──────────────────────-┐
            │      MCP Server       │
            │   (ServerHandler)     │
-           │──────────────────────│
+           │──────────────────────-│
            │ - call_tool()         │
            │ - list_tools()        │
-           └─────────┬────────────┘
+           └─────────┬────────────-┘
                      │
        ┌─────────────┼─────────────┐
        ▼             ▼             ▼
@@ -73,8 +73,8 @@ Swap functionality uses `eth_call` to simulate execution safely.
                 ▼                   ▼
            ┌─────────────────────────────┐
            │      Ethereum Node          │
-           │     (Infura / Alchemy)     │
-           │  RPC: eth_call / eth_getBalance │
+           │     (Infura / Alchemy)      │
+           │     eth_call/eth_getBalance │
            └─────────────────────────────┘
 
 
