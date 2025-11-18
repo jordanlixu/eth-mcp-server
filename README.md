@@ -46,41 +46,6 @@ Swap functionality uses `eth_call` to simulate execution safely.
 
 ## 2. Provided Tools
 
-```
-               ┌──────────────────────┐
-           │      AI Agent        │
-           │  (Decision Making)   │
-           └─────────┬────────────┘
-                     │  MCP Request
-                     ▼
-           ┌──────────────────────┐
-           │      MCP Server       │
-           │   (ServerHandler)     │
-           │──────────────────────│
-           │ - call_tool()         │
-           │ - list_tools()        │
-           └─────────┬────────────┘
-                     │
-       ┌─────────────┼─────────────┐
-       ▼             ▼             ▼
-┌───────────────┐ ┌───────────────┐ ┌───────────────┐
-│ BalanceModule │ │  PriceModule  │ │  SwapModule   │
-│  get_balance  │ │   get_price   │ │ simulate_swap │
-│  ETH/ERC20    │ │ Uniswap Pool  │ │  V2/V3 Swap   │
-└───────┬───────┘ └───────┬───────┘ └───────┬───────┘
-        │                 │                 │
-        └───────┬─────────┴─────────┬───────┘
-                ▼                   ▼
-           ┌─────────────────────────────┐
-           │      Ethereum Node          │
-           │     (Infura / Alchemy)     │
-           │  RPC: eth_call / eth_getBalance │
-           └─────────────────────────────┘
-
-
-
-```
-
 ### `get_balance`
 
 Queries:
