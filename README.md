@@ -82,9 +82,10 @@ Create a `.env` file:
 ```bash
 INFURA_URL=
 WALLET_ADDRESS=
+USDC=
 ```
 
-> The private key is only used for constructing simulation transactions, **not broadcasted**.
+> Only used for constructing simulation transactions, **not broadcasted**.
 
 ---
 
@@ -119,9 +120,9 @@ cargo run --bin test_client
 
 ---
 
-## 5. Example MCP Tool Call
+## 5. Example MCP Tool Calls
 
-### Request
+### Request: get_balance
 
 ```json
 {
@@ -129,19 +130,77 @@ cargo run --bin test_client
   "params": {
     "name": "get_balance",
     "arguments": {
-      "address": "0x1234..."
+      "address": "0xYourWalletAddress",
+      "token": "0xUSDCContractAddress"
     }
   }
 }
 ```
 
-### Response
+### Response: get_balance
 
 ```json
 {
   "result": {
     "eth_balance": "0.52",
-    "tokens": []
+    "tokens": [
+      {
+        "symbol": "USDC",
+        "balance": "123.45"
+      }
+    ]
+  }
+}
+```
+
+### Request: get_price (ETH/USD)
+
+```json
+{
+  "method": "call_tool",
+  "params": {
+    "name": "get_price",
+    "arguments": {
+      "token": null
+    }
+  }
+}
+```
+
+### Response: get_price (ETH/USD)
+
+```json
+{
+  "result": {
+    "price": "1850.23"
+  }
+}
+```
+
+### Request: swap_tokens
+
+```json
+{
+  "method": "call_tool",
+  "params": {
+    "name": "swap_tokens",
+    "arguments": {
+      "from_token": "ETH",
+      "to_token": "USDC",
+      "amount_in": "0.001",
+      "slippage": 0.5
+    }
+  }
+}
+```
+
+### Response: swap_tokens
+
+```json
+{
+  "result": {
+    "amount_out": "1.82",
+    "estimated_gas": 21000
   }
 }
 ```
