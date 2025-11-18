@@ -19,23 +19,32 @@ MCP Client → MCP Server → Ethereum RPC → Uniswap Contracts
 ### Architecture Diagram
 
 ```
-+-------------+          +---------------+
-| MCP Client  | <------> | MCP Server    |
-| (AI Agent)  |          | (Rust App)    |
-+-------------+          +---------------+
-                                |
-                                | RPC Call
-                                v
-                        +-------------------+
-                        | Ethereum Node (RPC)|
-                        | Infura / Alchemy  |
-                        +-------------------+
-                                |
-                                v
-                         +--------------+
-                         | Uniswap V2/V3|
-                         | Smart Contract|
-                         +--------------+
+       ┌──────────────────────┐
+       │      AI Agent        │
+       │  (decision making)   │
+       └─────────┬────────────┘
+                 │  MCP Request
+                 ▼
+       ┌──────────────────────┐
+       │      MCP Server       │
+       │   (ServerHandler)     │
+       │──────────────────────│
+       │ - call_tool()         │
+       │ - list_tools()        │
+       └─────────┬────────────┘
+                 │
+       ┌─────────┼─────────────┐
+       ▼         ▼             ▼
+┌───────────────┐ ┌───────────────┐ ┌───────────────┐
+│ BalanceModule │ │  PriceModule  │ │  SwapModule   │
+│  get_balance  │ │   get_price   │ │ simulate_swap │
+└───────────────┘ └───────────────┘ └───────────────┘
+                 │
+                 ▼
+        ┌─────────────────┐
+        │ Ethereum Node   │
+        │  (ethers.rs)    │
+        └─────────────────┘
 ```
 
 > **Note:** The server does **not** execute real transactions.
@@ -85,7 +94,7 @@ WALLET_ADDRESS=
 USDC=
 ```
 
-> Only used for constructing simulation transactions, **not broadcasted**.
+> The private key is only used for constructing simulation transactions, **not broadcasted**.
 
 ---
 
