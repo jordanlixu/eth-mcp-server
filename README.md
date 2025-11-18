@@ -94,7 +94,7 @@ WALLET_ADDRESS=
 USDC=
 ```
 
-> The private key is only used for constructing simulation transactions, **not broadcasted**.
+> The keys is only used for constructing simulation transactions, **not broadcasted**.
 
 ---
 
