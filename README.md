@@ -25,16 +25,16 @@ MCP Client → MCP Server → Ethereum RPC → Uniswap Contracts
        └─────────┬────────────┘
                  │  MCP Request
                  ▼
-       ┌──────────────────────┐
+       ┌──────────────────────-┐
        │      MCP Server       │
        │   (ServerHandler)     │
-       │──────────────────────│
+       │──────────────────────-│
        │ - call_tool()         │
        │ - list_tools()        │
-       └─────────┬────────────┘
+       └─────────┬────────────-┘
                  │
-       ┌─────────┼─────────────┐
-       ▼         ▼             ▼
+       ┌─────────┼────────────------------─┐
+       ▼         ▼                         ▼
 ┌───────────────┐ ┌───────────────┐ ┌───────────────┐
 │ BalanceModule │ │  PriceModule  │ │  SwapModule   │
 │  get_balance  │ │   get_price   │ │ simulate_swap │
