@@ -1,29 +1,23 @@
 
+---
 
-### **1. Architecture Overview**
+# MCP Ethereum Tooling Server (Rust)
 
-1. **MCP Client (AI Agent)**
+This project implements a Model Context Protocol (MCP) server in Rust that provides Ethereum-related tooling for AI agents.
+It exposes balance queries, token price lookup, and Uniswap swap simulation—through a simple MCP interface.
 
-   * Your client or AI agent that initiates requests and receives responses.
+The goal of this project is to demonstrate practical Rust engineering, modular design, and correct usage of Ethereum RPC.
 
-2. **MCP Server (Rust App)**
+---
 
-   * Receives requests from the MCP Client.
-   * Internally, it makes RPC calls to the Ethereum node.
+## 1. Overview
 
-3. **Ethereum Node (RPC) – Infura / Alchemy**
+The server acts as an MCP-compatible backend.
+When an AI agent calls a tool, the server performs on-chain queries via Ethereum RPC.
 
-   * The server interacts with the Ethereum blockchain through RPC.
-   * Provides access to on-chain data such as blocks, transactions, and smart contract states.
-
-4. **Uniswap V2/V3 Smart Contract**
-
-   * The actual on-chain contract.
-   * The server can query or interact with it via RPC (e.g., get prices, perform swaps, check liquidity).
-
-**Overall Flow:**
-**MCP Client ↔ MCP Server → Ethereum Node → Uniswap Contract**
-
+```
+MCP Client → MCP Server → Ethereum RPC → Uniswap Contracts
+```
 #### ASCII Diagram:
 
 ```
@@ -44,11 +38,13 @@
                          | Uniswap V2/V3 |
                          | Smart Contract |
                          +--------------+
-```
+
+The server does **not** execute real transactions.
+Swap functionality uses `eth_call` to simulate execution safely.
 
 ---
 
-### **2. MCP Server Flow**
+## 2. Provided Tools
 
 ```
            ┌──────────────────────┐
@@ -79,13 +75,131 @@
           └─────────────────┘
 ```
 
-**Explanation:**
+### `get_balance`
 
-* **AI Agent**: Sends requests to the MCP Server to retrieve data or execute operations.
-* **MCP Server**: Handles requests according to the `ServerHandler` trait and manages context.
-* **Tool Modules**: `BalanceModule`, `PriceModule`, and `SwapModule` provide specific functionalities.
-* **Ethereum Node**: The underlying blockchain data source; the tool modules interact with it via the provider (`ethers.rs`).
+Queries:
+
+* ETH balance
+* ERC20 balance (using ABI + decimals)
+
+### `get_token_price`
+
+Fetches token price using on-chain Uniswap pool data.
+(External price sources not included in this assignment.)
+
+### `swap_tokens`
+
+Constructs a Uniswap V2 or V3 swap call and simulates it using `eth_call`.
+Returns expected output amount and gas estimate.
+
+No transaction is broadcast.
 
 ---
+
+## 3. Requirements
+
+### Dependencies
+
+* Rust (tokio async runtime)
+* `ethers-rs`
+* `serde` / `serde_json`
+* `tracing` for logging
+* MCP Rust SDK (`rmcp`)
+
+### Environment
+
+Create a `.env` file:
+
+```
+INFURA_URL=
+WALLET_ADDRESS=
+```
+
+The private key is only used to construct transactions for simulation (not broadcast).
+
+---
+
+## 4. Running
+
+Install dependencies:
+
+```
+cargo build
+```
+
+Start the server:
+
+```
+cargo run
+```
+
+Run tests:
+
+```
+cargo test
+```
+Usage
+
+1️⃣ Run MCP Server
+cargo run
+
+Starts the MCP server (main.rs)
+
+Runs on Sepolia testnet with real wallets
+
+ChatGPT or other clients can send requests directly
+
+2️⃣ Run Test Client (Local Simulation)
+cargo run --bin test_client
+
+
+Simulates an MCP host / client locally
+
+Sends requests to the running MCP server to test endpoints and responses
+
+Useful for development or automated tests without deploying the server
+
+All transactions occur on Sepolia testnet — safe, no production infra required
+---
+
+## 5. Example MCP Tool Call
+
+### Request
+
+```json
+{
+  "method": "call_tool",
+  "params": {
+    "name": "get_balance",
+    "arguments": {
+      "address": "0x1234..."
+    }
+  }
+}
+```
+
+### Response
+
+```json
+{
+  "result": {
+    "eth_balance": "0.52",
+    "tokens": []
+  }
+}
+```
+
+---
+
+## 6. Design Notes (Short & Honest)
+
+* The server uses a single shared Ethereum provider to reduce redundant connections.
+* Uses real wallets on Sepolia testnet, with simulated/test transactions; no production infrastructure required.
+* Can be deployed locally or embedded in external clients
+
+---
+
+
+
 
 
